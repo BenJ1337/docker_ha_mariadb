@@ -1,0 +1,35 @@
+services:
+  ha-mariadb:
+    container_name: ha-mariadb
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/root_pw
+      - MYSQL_DATABASE=ha
+      - MYSQL_USER=MariaDbUser
+      - MYSQL_PASSWORD_FILE=/run/secrets/user_pw
+    volumes:
+       - mariadb_ha:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 7s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - ha_network
+    secrets:
+      - root_pw
+      - user_pw
+networks:
+  ha_network:
+    external: true
+secrets:
+  root_pw:
+    file: ~/ha-secrets/root-pw.secret
+  user_pw:
+    file: ~/ha-secrets/user-pw.secret
+volumes:
+  mariadb_ha:
+    external: true
